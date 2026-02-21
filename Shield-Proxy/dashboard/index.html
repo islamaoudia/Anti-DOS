@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENTINEL // ADVANCED DEFENSE v2.5</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050507;
+            --surface: #0f0f13;
+            --surface-accent: #17171d;
+            --primary: #00f3ff;
+            --primary-glow: rgba(0, 243, 255, 0.4);
+            --secondary: #bd00ff;
+            --danger: #ff2d55;
+            --warning: #f2ff00;
+            --success: #00ff88;
+            --text-main: #e2e8f0;
+            --text-dim: #64748b;
+            --grid-color: rgba(0, 243, 255, 0.03);
+        }
+
+        @keyframes scan {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(100%);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                text-shadow: 0 0 10px var(--primary-glow);
+            }
+
+            50% {
+                opacity: 0.6;
+                text-shadow: 0 0 20px var(--primary);
+            }
+
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 10px var(--primary-glow);
+            }
+        }
+
+        .pulse-text {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes bar-pulse {
+            0% {
+                box-shadow: 0 0 5px var(--danger);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--danger);
+            }
+
+            100% {
+                box-shadow: 0 0 5px var(--danger);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Overlay FX */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.05) 50%, transparent);
+            animation: scan 8s linear infinite;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 40px;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-group h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .logo-group p {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .logo-group img {
+            height: 50px;
+            width: auto;
+            margin-left: 15px;
+            filter: drop-shadow(0 0 5px var(--primary-glow));
+        }
+
+        .sys-info {
+            display: flex;
+            gap: 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+        }
+
+        .sys-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .sys-stat .label {
+            color: var(--text-dim);
+        }
+
+        .sys-stat .val {
+            color: var(--primary);
+        }
+
+        /* Main Dashboard Grid */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            gap: 20px;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--surface-accent);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: var(--surface-accent);
+            border-radius: 10px;
+        }
+
+        .panel::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            background: var(--surface-accent);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+        }
+
+        /* Metric Cards */
+        .metrics-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .metric-card {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 4px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.02));
+            pointer-events: none;
+        }
+
+        .metric-card.danger {
+            border-left-color: var(--danger);
+        }
+
+        .metric-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .metric-card.success {
+            border-left-color: var(--success);
+        }
+
+        .metric-card .m-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .metric-card .m-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--text-main);
+        }
+
+        /* Threat Feed */
+        .feed-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+
+        .feed-entry {
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid transparent;
+            display: flex;
+            gap: 15px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feed-entry.warn {
+            border-color: rgba(242, 255, 0, 0.15);
+            color: var(--warning);
+        }
+
+        .feed-entry.block {
+            border-color: rgba(255, 45, 85, 0.15);
+            color: var(--danger);
+        }
+
+        .feed-entry.system {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        .feed-entry .ts {
+            color: #444;
+        }
+
+        /* Fingerprint List */
+        .fp-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .fp-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 11px;
+        }
+
+        .fp-item .fp-hash {
+            color: var(--secondary);
+            font-family: monospace;
+        }
+
+        .fp-item .fp-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            color: var(--text-dim);
+        }
+
+        .status-pill {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pill-jailed {
+            background: rgba(255, 45, 85, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .pill-clear {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .unjail-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            padding: 2px 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .unjail-btn:hover {
+            background: var(--primary);
+            color: var(--bg);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .config-input {
+            background: #000;
+            border: 1px solid #222;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            width: 100%;
+            padding: 4px;
+            outline: none;
+            text-align: center;
+        }
+
+        .config-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 5px var(--primary-glow);
+        }
+
+        footer {
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            color: var(--text-dim);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            background: var(--surface-accent);
+            border: 1px solid #333;
+            color: var(--danger);
+        }
+
+        .status-badge.online {
+            color: var(--success);
+            border-color: var(--success);
+            box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            border: 2px solid var(--primary);
+            box-sizing: border-box;
+        }
+
+        .auth-card {
+            padding: 40px;
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--primary);
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .auth-input {
+            background: #000;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron';
+            padding: 10px;
+            text-align: center;
+            letter-spacing: 5px;
+            margin: 20px 0;
+            outline: none;
+            width: 250px;
+        }
+
+        /* Chart Container Styling */
+        .chart-container {
+            padding: 15px;
+            height: 160px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h1 style="color: var(--primary); letter-spacing: 5px; margin-bottom: 5px;">SYSTEM ENCRYPTED</h1>
+            <p style="font-size: 10px; color: var(--text-dim);">ENTER SENTINEL ACCESS KEY TO DECRYPT INTERFACE</p>
+            <input type="password" id="auth-key" class="auth-input" placeholder="••••••••"
+                onkeypress="if(event.key==='Enter') verifyKey()">
+            <br>
+            <button onclick="verifyKey()" class="unjail-btn" style="padding: 10px 30px;">AUTHORIZE</button>
+        </div>
+    </div>
+    <div class="scanline"></div>
+    <div class="container">
+        <header>
+            <div class="logo-group">
+                <h1 class="pulse-text">C0mpl3x_7he0r3m // <span>SHIELD</span></h1>
+                <img src="img/logo.png" alt="logo">
+                <p>Advanced DoS Mitigation Intelligence • v2.5 Enterprise</p>
+            </div>
+            <div class="sys-info">
+                <div class="sys-stat">
+                    <span class="label">ENGINE STATUS</span>
+                    <span id="status" class="val">INITIALIZING...</span>
+                </div>
+                <div class="sys-stat">
+                    <span class="label">SESSION UPTIME</span>
+                    <span id="uptime" class="val">00:00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-main">
+            <!-- Left: Global Metrics -->
+            <section class="panel">
+                <div class="panel-header">CORE METRICS <span>[REAL-TIME]</span></div>
+                <div class="metrics-grid">
+                    <div class="metric-card danger">
+                        <div class="m-label">NEUTRALIZED THREATS</div>
+                        <div id="count-blocks" class="m-value">0000</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="m-label">ANOMALOUS ACTIVITY</div>
+                        <div id="count-warnings" class="m-value">0000</div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="m-label">TRAFFIC INTEGRITY</div>
+                        <div id="integrity" class="m-value">100%</div>
+                    </div>
+                </div>
+
+                <div class="panel-header" style="border-top: 1px solid var(--surface-accent);">SECURITY COMMAND
+                    <span>[ADMIN]</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="config-section">
+                        <div class="config-group" style="margin-bottom: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 10px; color: var(--primary); font-family: 'Orbitron';">STANDARD
+                                    TRAFFIC</span>
+                                <span style="font-size: 8px; color: var(--text-dim);">BURST / REFILL</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <input type="number" id="std-burst" class="config-input" placeholder="Burst">
+                                <input type="number" id="std-refill" class="config-input" placeholder="Refill">
+                            </div>
+                        </div>
+
+                        <div class="config-group" style="margin-bottom: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span
+                                    style="font-size: 10px; color: var(--secondary); font-family: 'Orbitron';">SENSITIVE
+                                    API</span>
+                                <span style="font-size: 8px; color: var(--text-dim);">BURST / REFILL</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <input type="number" id="api-burst" class="config-input" placeholder="Burst">
+                                <input type="number" id="api-refill" class="config-input" placeholder="Refill">
+                            </div>
+                        </div>
+
+                        <button onclick="deployPolicies()" class="unjail-btn"
+                            style="width: 100%; padding: 12px; font-size: 10px; letter-spacing: 2px; border-width: 2px;">
+                            DEPLOY SECURITY UPDATE
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center: Live Feed & Graphs -->
+            <section class="panel">
+                <div class="panel-header">THREAT INTENSITY MATRIX <span>[LIVE TELEMETRY]</span></div>
+                <div class="chart-container">
+                    <canvas id="threatChart"></canvas>
+                </div>
+
+                <div class="panel-header" style="border-top: 1px solid var(--surface-accent);">REQUESTS PER SECOND (RPS)
+                    <span>[REAL-TIME]</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="rpsChart"></canvas>
+                </div>
+
+                <div class="panel-header" style="border-top: 1px solid var(--surface-accent);">RESPONSE STATUS CODES
+                    <span>[DISTRIBUTION]</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+
+                <div class="panel-header" style="border-top: 1px solid var(--surface-accent);">LIVE THREAT ANALYTICS
+                    <span>AUTO-SCROLL ON</span>
+                </div>
+                <div id="feed" class="feed-container">
+                    <div class="feed-entry system pulse-text">Establishing secure handshake with Sentinel Engine...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Forensics -->
+            <section class="panel">
+                <div class="panel-header">FINGERPRINT FORENSICS <span>LAST 5 TARGETS</span></div>
+                <div id="fp-list" class="fp-list">
+                    <div class="feed-entry system" style="margin: 0;">Scanning for active fingerprints...</div>
+                </div>
+                <div style="margin-top: auto; padding: 15px; border-top: 1px solid var(--surface-accent);">
+                    <div class="panel-header" style="background: transparent; padding: 0; margin-bottom: 10px;">THREAT
+                        PROXIMITY</div>
+                    <div style="height: 6px; background: #111; position: relative; border: 1px solid #222;">
+                        <div id="threat-bar"
+                            style="position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--danger); transition: width 0.5s; animation: bar-pulse 2s infinite;">
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <span>PROTOCOL: X-SEC-LUA-TOKEN-BUCKET v1.2</span>
+            <span>DATA ENCRYPTION: AES-256 GCM</span>
+            <span>© 2026 SENTINEL DEFENSE INDUSTRIES</span>
+        </footer>
+    </div>
+
+    <script>
+        let ADMIN_KEY = sessionStorage.getItem('sentinel_key') || '';
+        const socket = io(); // Connect to relative host
+
+        function verifyKey() {
+            const key = document.getElementById('auth-key').value;
+            ADMIN_KEY = key;
+            sessionStorage.setItem('sentinel_key', key);
+            checkAuth();
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/config', {
+                    headers: { 'x-sentinel-auth': ADMIN_KEY }
+                });
+                if (res.ok) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    loadConfig();
+                } else {
+                    alert("ACCESS DENIED: INVALID KEY");
+                    sessionStorage.removeItem('sentinel_key');
+                }
+            } catch (err) {
+                console.error("Auth check failed:", err);
+            }
+        }
+
+        if (ADMIN_KEY) checkAuth();
+
+        const feedEl = document.getElementById('feed');
+        const fpListEl = document.getElementById('fp-list');
+        const blockCountEl = document.getElementById('count-blocks');
+        const warnCountEl = document.getElementById('count-warnings');
+        const uptimeEl = document.getElementById('uptime');
+        const statusEl = document.getElementById('status');
+        const threatBar = document.getElementById('threat-bar');
+        const integrityEl = document.getElementById('integrity');
+
+        let stats = { blocks: 0, warns: 0, startTime: Date.now() };
+        let activeFingerprints = new Map();
+
+        // --- 📊 CHART CONFIGURATION ---
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    display: false,
+                    grid: { display: false }
+                },
+                x: {
+                    display: false,
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            },
+            animation: {
+                duration: 750,
+                easing: 'easeInOutCubic'
+            },
+            elements: {
+                line: {
+                    tension: 0.4
+                }
+            }
+        };
+
+        // --- 📊 CHART 1: THREAT INTENSITY ---
+        let threatLevelHistory = new Array(60).fill(0);
+        const ctx1 = document.getElementById('threatChart').getContext('2d');
+
+        // Gradient fill for threat chart
+        const threatGradient = ctx1.createLinearGradient(0, 0, 0, 160);
+        threatGradient.addColorStop(0, 'rgba(255, 45, 85, 0.5)');
+        threatGradient.addColorStop(1, 'rgba(255, 45, 85, 0.02)');
+
+        const threatChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: new Array(60).fill(''),
+                datasets: [{
+                    label: 'THREAT INTENSITY',
+                    data: threatLevelHistory,
+                    borderColor: '#ff2d55',
+                    backgroundColor: threatGradient,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...chartConfig,
+                scales: {
+                    x: { display: false, grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        display: true,
+                        grid: { color: 'rgba(255, 45, 85, 0.08)' },
+                        ticks: {
+                            color: 'rgba(255, 45, 85, 0.5)',
+                            font: { family: 'Orbitron', size: 9 },
+                            maxTicksLimit: 5
+                        }
+                    }
+                }
+            }
+        });
+
+
+        // --- 📊 CHART 2: RPS ---
+        let rpsHistory = new Array(40).fill(0);
+        const ctx2 = document.getElementById('rpsChart').getContext('2d');
+        const rpsChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: new Array(40).fill(''),
+                datasets: [{
+                    label: 'RPS',
+                    data: rpsHistory,
+                    borderColor: '#00f3ff',
+                    backgroundColor: 'rgba(0, 243, 255, 0.15)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: chartConfig
+        });
+
+        // --- 📊 CHART 3: STATUS CODES ---
+        let status2xxHistory = new Array(40).fill(0);
+        let status429History = new Array(40).fill(0);
+        let statusOtherHistory = new Array(40).fill(0);
+        const ctx3 = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: new Array(40).fill(''),
+                datasets: [
+                    {
+                        label: '2xx',
+                        data: status2xxHistory,
+                        borderColor: '#00ff88',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: '429',
+                        data: status429History,
+                        borderColor: '#ff2d55',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Other',
+                        data: statusOtherHistory,
+                        borderColor: '#f2ff00',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                ...chartConfig,
+                scales: {
+                    ...chartConfig.scales,
+                    y: { ...chartConfig.scales.y, display: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+
+        // --- 📈 CHART UPDATE LOGIC ---
+        let currentSecondThreats = 0;
+
+        let lastDosAlert = 0; // Throttle DoS detection feed entries
+
+        socket.on('dashboard-stats', (data) => {
+            // Update RPS
+            rpsHistory.push(data.rps);
+            rpsHistory.shift();
+            rpsChart.update('none');
+
+            // Update Status Codes
+            status2xxHistory.push(data.statusCodes['2xx']);
+            status2xxHistory.shift();
+            status429History.push(data.statusCodes['429']);
+            status429History.shift();
+            statusOtherHistory.push(data.statusCodes['other']);
+            statusOtherHistory.shift();
+            statusChart.update('none');
+
+            // Feed the Threat Intensity chart with real data
+            const threatLevel = (data.statusCodes['429'] * 8) + (data.statusCodes['other'] * 3) + Math.max(0, data.rps - 10);
+            currentSecondThreats = Math.max(currentSecondThreats, threatLevel);
+
+            // 🚨 DoS Attack Detection — Log to Live Feed
+            const now = Date.now();
+            const throttleMs = 3000; // Max one alert per 3 seconds to avoid flooding
+
+            if (now - lastDosAlert > throttleMs) {
+                const rps = data.rps;
+                const blocked = data.statusCodes['429'];
+                const otherErrors = data.statusCodes['other'];
+
+                if (blocked > 0 && rps > 5) {
+                    addFeed(`⚠️ DoS ATTACK DETECTED — ${rps} req/s | ${blocked} BLOCKED (429) | ${otherErrors} errors`, 'block');
+                    lastDosAlert = now;
+                    flashRed();
+                } else if (blocked > 0) {
+                    addFeed(`🔒 Rate limiting active — ${blocked} requests blocked this second`, 'warn');
+                    lastDosAlert = now;
+                } else if (rps > 15) {
+                    addFeed(`📈 High traffic detected — ${rps} req/s | Monitoring...`, 'warn');
+                    lastDosAlert = now;
+                } else if (rps > 0) {
+                    // Normal traffic heartbeat (less frequent)
+                    if (now - lastDosAlert > 10000) {
+                        addFeed(`✅ Normal traffic — ${rps} req/s | System nominal`, 'system');
+                        lastDosAlert = now;
+                    }
+                }
+            }
+
+            // Update Core Metrics from Server Persistence
+            if (data.globalCounters) {
+                stats.blocks = data.globalCounters.blocks;
+                stats.warns = data.globalCounters.warns;
+                blockCountEl.textContent = String(stats.blocks).padStart(4, '0');
+                warnCountEl.textContent = String(stats.warns).padStart(4, '0');
+                updateIntegrity();
+                updateThreatBar();
+            }
+
+            // Update Forensics from Server Persistence
+            if (data.recentAttacks && data.recentAttacks.length > 0) {
+                data.recentAttacks.forEach(a => {
+                    activeFingerprints.set(a.fingerprint, a);
+                });
+                renderFingerprints();
+            }
+        });
+
+        setInterval(() => {
+            // Update Threat Intensity (local decay based on events)
+            threatLevelHistory.push(currentSecondThreats);
+            threatLevelHistory.shift();
+            threatChart.update('none');
+            currentSecondThreats = Math.max(0, currentSecondThreats - 2);
+        }, 1000);
+
+        // Config Elements
+        const stdBurstInp = document.getElementById('std-burst');
+        const stdRefillInp = document.getElementById('std-refill');
+        const apiBurstInp = document.getElementById('api-burst');
+        const apiRefillInp = document.getElementById('api-refill');
+
+        // Uptime Update
+        setInterval(() => {
+            const diff = Math.floor((Date.now() - stats.startTime) / 1000);
+            const hrs = String(Math.floor(diff / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+            const secs = String(diff % 60).padStart(2, '0');
+            uptimeEl.textContent = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+
+        socket.on('connect', () => {
+            statusEl.textContent = 'ONLINE';
+            statusEl.style.color = 'var(--success)';
+            addFeed('SECURE CONNECTION ESTABLISHED. HANDSHAKE 100%', 'system');
+            loadConfig();
+        });
+
+        socket.on('config-updated', (newConfig) => {
+            addFeed(`[SYSTEM] Security policies updated via remote terminal.`, 'system');
+            updateConfigUI(newConfig);
+        });
+
+        socket.on('disconnect', () => {
+            statusEl.textContent = 'LINK LOST';
+            statusEl.style.color = 'var(--danger)';
+            addFeed('WARNING: CONNECTION INTERRUPTED. RETRYING...', 'block');
+        });
+
+        socket.on('attack-warning', (data) => {
+            stats.warns++;
+            currentSecondThreats += 3;
+            currentBandwidth += 15; // Spike bandwidth
+            currentLatency += 5; // Spike latency
+            warnCountEl.textContent = String(stats.warns).padStart(4, '0');
+            updateIntegrity();
+            addFeed(`[ANOMALY] ${data.ip} triggered warning: ${data.count}`, 'warn');
+            flashRed();
+            updateFingerprint(data.ip, data.fingerprint, 'Clear');
+        });
+
+        socket.on('ip-banned', (data) => {
+            stats.blocks++;
+            currentSecondThreats += 8;
+            currentBandwidth += 25; // Major spike
+            currentLatency += 10; // Major spike
+            blockCountEl.textContent = String(stats.blocks).padStart(4, '0');
+            updateIntegrity();
+
+            const expiry = typeof data.bannedUntil === 'number'
+                ? new Date(data.bannedUntil).toLocaleTimeString()
+                : data.bannedUntil;
+
+            addFeed(`[NEUTRALIZED] ${data.ip} - Policy violation. Jail until: ${expiry}`, 'block');
+            flashRed();
+
+            // Update Fingerprint List
+            updateFingerprint(data.ip, data.fingerprint, 'Jailed');
+            updateThreatBar();
+        });
+
+        socket.on('unjail-complete', (data) => {
+            if (data && data.fingerprint) {
+                const entry = activeFingerprints.get(data.fingerprint);
+                if (entry) {
+                    entry.status = 'Clear';
+                    renderFingerprints();
+                }
+                addFeed(`🔓 [SYSTEM] Manual Jailbreak for ${data.fingerprint.substring(0, 8)} confirmed by server.`, 'system');
+            }
+        });
+
+        function addFeed(msg, type = '') {
+            const div = document.createElement('div');
+            div.className = `feed-entry ${type}`;
+            const ts = new Date().toLocaleTimeString();
+            div.innerHTML = `<span class="ts">[${ts}]</span> <span class="content">${msg}</span>`;
+            feedEl.appendChild(div);
+
+            // Auto-scroll logic (delayed to ensure layout update)
+            requestAnimationFrame(() => {
+                feedEl.scrollTop = feedEl.scrollHeight;
+            });
+
+            if (feedEl.children.length > 100) feedEl.firstChild.remove();
+        }
+
+        function updateFingerprint(ip, fingerprint, status) {
+            activeFingerprints.set(fingerprint, { ip, status, lastSeen: new Date().toLocaleTimeString() });
+            renderFingerprints();
+        }
+
+        function renderFingerprints() {
+            const el = document.getElementById('fp-list');
+            if (!el) return;
+            el.innerHTML = '';
+            const entries = Array.from(activeFingerprints.entries()).reverse().slice(0, 5);
+            if (entries.length === 0) {
+                el.innerHTML = '<div class="feed-entry system" style="margin: 0;">Scanning for active fingerprints...</div>';
+                return;
+            }
+            entries.forEach(([fingerprint, data]) => {
+                const item = document.createElement('div');
+                item.className = 'fp-item';
+                const statusClass = data.status === 'Clear' ? 'pill-clear' : 'pill-jailed';
+                let actionBtn = '';
+
+                if (data.status === 'Jailed') {
+                    actionBtn = `<button class="unjail-btn" onclick="unjailUser('${fingerprint}')">Unjail</button>`;
+                } else {
+                    actionBtn = `<button class="unjail-btn" style="border-color: var(--danger); color: var(--danger);" onclick="banUser('${fingerprint}')">BAN</button>`;
+                }
+
+                item.innerHTML = `
+                    <div class="fp-hash">${data.ip} <span style="font-size: 8px; color: #333;">(${fingerprint.substring(0, 8)})</span></div>
+                    <div class="fp-meta">
+                        <span>LAST ACCESS: ${data.lastSeen}</span>
+                        <div>
+                            <span class="status-pill ${statusClass}">${data.status}</span>
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+                el.appendChild(item);
+            });
+        }
+
+        async function unjailUser(fingerprint) {
+            if (!fingerprint) return;
+            // Emit socket event for unjail
+            socket.emit('manual-unjail', { fingerprint });
+            // Optimistic update
+            const data = activeFingerprints.get(fingerprint);
+            if (data) {
+                data.status = 'Clear';
+                activeFingerprints.set(fingerprint, data);
+                renderFingerprints();
+            }
+            addFeed(`🔓 [SYSTEM] Unjail request sent for ${fingerprint.substring(0, 8)}...`, 'system');
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config', {
+                    headers: { 'x-sentinel-auth': ADMIN_KEY }
+                });
+                const config = await res.json();
+                updateConfigUI(config);
+            } catch (err) {
+                console.error("Failed to load config:", err);
+            }
+        }
+
+        function updateConfigUI(config) {
+            stdBurstInp.value = config.STD.burst;
+            stdRefillInp.value = config.STD.refill;
+            apiBurstInp.value = config.API.burst;
+            apiRefillInp.value = config.API.refill;
+        }
+
+        async function deployPolicies() {
+            const payload = {
+                STD: { burst: stdBurstInp.value, refill: stdRefillInp.value },
+                API: { burst: apiBurstInp.value, refill: apiRefillInp.value }
+            };
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-sentinel-auth': ADMIN_KEY
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    addFeed(`[SYSTEM] Security policies successfully deployed.`, 'system');
+                }
+            } catch (err) {
+                console.error("Failed to deploy policies:", err);
+            }
+        }
+
+        function updateIntegrity() {
+            const total = stats.blocks + stats.warns;
+            const integrity = Math.max(0, 100 - (total * 0.1));
+            integrityEl.textContent = `${integrity.toFixed(1)}%`;
+            if (integrity < 98) integrityEl.style.color = 'var(--warning)';
+            if (integrity < 90) integrityEl.style.color = 'var(--danger)';
+        }
+
+        function updateThreatBar() {
+            const level = Math.min(100, stats.blocks * 5);
+            threatBar.style.width = `${level}%`;
+            if (level > 70) threatBar.style.background = 'var(--danger)';
+        }
+
+        function flashRed() {
+            document.body.style.boxShadow = "inset 0 0 100px rgba(255, 45, 85, 0.3)";
+            setTimeout(() => { document.body.style.boxShadow = "none"; }, 300);
+        }
+        async function banUser(fingerprint) {
+            if (!fingerprint) return;
+            // Emit socket event for manual ban
+            socket.emit('manual-ban', { fingerprint });
+            // Optimistic update
+            const data = activeFingerprints.get(fingerprint);
+            if (data) {
+                data.status = 'Jailed';
+                activeFingerprints.set(fingerprint, data);
+                renderFingerprints();
+            }
+        }
+    </script>
+</body>
+
+</html>

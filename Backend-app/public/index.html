@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS API Server — Control Panel</title>
+    <meta name="description"
+        content="NEXUS Backend API Server Control Panel — Real-time monitoring and endpoint testing">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #16161f;
+            --bg-card-hover: #1c1c28;
+            --border: #1e1e2e;
+            --border-hover: #2a2a3d;
+            --text-primary: #e4e4e7;
+            --text-secondary: #71717a;
+            --text-muted: #52525b;
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.15);
+            --accent-green: #22c55e;
+            --accent-green-glow: rgba(34, 197, 94, 0.15);
+            --accent-amber: #f59e0b;
+            --accent-amber-glow: rgba(245, 158, 11, 0.15);
+            --accent-purple: #a855f7;
+            --accent-purple-glow: rgba(168, 85, 247, 0.15);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.15);
+            --accent-cyan: #06b6d4;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 20%, rgba(59, 130, 246, 0.04), transparent),
+                radial-gradient(ellipse 500px 300px at 80% 80%, rgba(168, 85, 247, 0.03), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: var(--accent-green-glow);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-green);
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            50% {
+                opacity: 0.7;
+                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+            }
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* --- METRICS GRID --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.25s ease;
+        }
+
+        .metric-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .metric-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .metric-card.blue .metric-value {
+            color: var(--accent-blue);
+        }
+
+        .metric-card.green .metric-value {
+            color: var(--accent-green);
+        }
+
+        .metric-card.amber .metric-value {
+            color: var(--accent-amber);
+        }
+
+        .metric-card.purple .metric-value {
+            color: var(--accent-purple);
+        }
+
+        /* --- ENDPOINT CARDS --- */
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .endpoint-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .endpoint-method {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .method-get {
+            background: var(--accent-green-glow);
+            color: var(--accent-green);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .endpoint-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .endpoint-test-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .endpoint-test-btn:hover {
+            background: var(--accent-blue-glow);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .endpoint-test-btn.loading {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* --- RESPONSE PANEL --- */
+        .response-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            display: none;
+        }
+
+        .response-panel.active {
+            display: block;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .response-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.success {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green-glow);
+        }
+
+        .status-dot.error {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red-glow);
+        }
+
+        .response-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .response-body {
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .response-body .key {
+            color: var(--accent-cyan);
+        }
+
+        .response-body .string {
+            color: var(--accent-green);
+        }
+
+        .response-body .number {
+            color: var(--accent-amber);
+        }
+
+        .response-body .boolean {
+            color: var(--accent-purple);
+        }
+
+        /* --- ACTIVITY LOG --- */
+        .activity-log {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .log-header {
+            padding: 14px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-body {
+            padding: 12px 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-ts {
+            color: var(--text-muted);
+            min-width: 75px;
+        }
+
+        .log-method {
+            font-weight: 600;
+            min-width: 40px;
+        }
+
+        .log-method.get {
+            color: var(--accent-green);
+        }
+
+        .log-path {
+            color: var(--accent-blue);
+        }
+
+        .log-status {
+            margin-left: auto;
+        }
+
+        .log-status.s200 {
+            color: var(--accent-green);
+        }
+
+        .log-status.s429 {
+            color: var(--accent-amber);
+        }
+
+        .log-status.s500 {
+            color: var(--accent-red);
+        }
+
+        .log-duration {
+            color: var(--text-muted);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            text-align: center;
+            padding: 32px 0 16px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                SYSTEM OPERATIONAL
+            </div>
+            <h1>NEXUS API Server</h1>
+            <p>Backend services control panel — monitor endpoints, test responses, and track system health in real time.
+            </p>
+        </div>
+
+        <!-- METRICS -->
+        <div class="metrics-grid">
+            <div class="metric-card blue">
+                <div class="metric-label">Total Requests</div>
+                <div class="metric-value" id="m-total">0</div>
+                <div class="metric-sub">Since boot</div>
+            </div>
+            <div class="metric-card green">
+                <div class="metric-label">Uptime</div>
+                <div class="metric-value" id="m-uptime">00:00</div>
+                <div class="metric-sub">Server runtime</div>
+            </div>
+            <div class="metric-card amber">
+                <div class="metric-label">Avg Response</div>
+                <div class="metric-value" id="m-response">0<span
+                        style="font-size:14px;color:var(--text-muted)">ms</span></div>
+                <div class="metric-sub">Last 100 requests</div>
+            </div>
+            <div class="metric-card purple">
+                <div class="metric-label">Memory</div>
+                <div class="metric-value" id="m-memory">0<span style="font-size:14px;color:var(--text-muted)">MB</span>
+                </div>
+                <div class="metric-sub">Heap used</div>
+            </div>
+        </div>
+
+        <!-- ENDPOINTS -->
+        <div class="section-title">API Endpoints</div>
+        <div class="endpoints-grid">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-path">/health</span>
+                    <span class="endpoint-method method-get">GET</span>
+                </div>
+                <p class="endpoint-desc">Returns server health status, memory usage, uptime, and environment
+                    information.</p>
+                <button class="endpoint-test-btn" onclick="testEndpoint('/health', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                    Test Endpoint
+                </button>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-path">/heavy</span>
+                    <span class="endpoint-method method-get">GET</span>
+                </div>
+                <p class="endpoint-desc">Simulates a heavy computation or database query with ~300ms processing delay.
+                </p>
+                <button class="endpoint-test-btn" onclick="testEndpoint('/heavy', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                    Test Endpoint
+                </button>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-path">/api/data</span>
+                    <span class="endpoint-method method-get">GET</span>
+                </div>
+                <p class="endpoint-desc">Returns sensitive API information with metadata, rate-limit headers, and
+                    response timing.</p>
+                <button class="endpoint-test-btn" onclick="testEndpoint('/api/data', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                    Test Endpoint
+                </button>
+            </div>
+        </div>
+
+        <!-- RESPONSE PANEL -->
+        <div class="response-panel" id="response-panel">
+            <div class="response-header">
+                <div class="response-status">
+                    <span class="status-dot" id="res-dot"></span>
+                    <span id="res-status">200 OK</span>
+                </div>
+                <span class="response-time" id="res-time">0ms</span>
+            </div>
+            <div class="response-body" id="res-body"></div>
+        </div>
+
+        <!-- ACTIVITY LOG -->
+        <div class="section-title">Activity Log</div>
+        <div class="activity-log">
+            <div class="log-header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M2 12h20" />
+                </svg>
+                Recent Requests
+            </div>
+            <div class="log-body" id="log-body">
+                <div class="log-entry" style="color: var(--text-muted); justify-content: center; padding: 20px;">
+                    No requests yet — test an endpoint above.
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            NEXUS API Server v2.0 — Protected by <a href="/sentinel" target="_blank">Sentinel Shield</a>
+        </div>
+    </div>
+
+    <script>
+        // --- METRICS POLLING ---
+        async function fetchMetrics() {
+            try {
+                const res = await fetch('/api/metrics');
+                const data = await res.json();
+
+                document.getElementById('m-total').textContent = data.totalRequests.toLocaleString();
+
+                const hrs = String(Math.floor(data.uptime / 3600)).padStart(2, '0');
+                const mins = String(Math.floor((data.uptime % 3600) / 60)).padStart(2, '0');
+                const secs = String(Math.floor(data.uptime % 60)).padStart(2, '0');
+                document.getElementById('m-uptime').textContent = `${hrs}:${mins}:${secs}`;
+
+                document.getElementById('m-response').innerHTML = `${data.avgResponseTime}<span style="font-size:14px;color:var(--text-muted)">ms</span>`;
+                document.getElementById('m-memory').innerHTML = `${data.memory}<span style="font-size:14px;color:var(--text-muted)">MB</span>`;
+            } catch (e) { /* silent */ }
+        }
+
+        fetchMetrics();
+        setInterval(fetchMetrics, 2000);
+
+        // --- ENDPOINT TESTING ---
+        let firstLog = true;
+
+        async function testEndpoint(path, btn) {
+            btn.classList.add('loading');
+            btn.textContent = 'Requesting...';
+            const start = Date.now();
+
+            try {
+                const res = await fetch(path);
+                const duration = Date.now() - start;
+                const data = await res.json();
+
+                // Show response panel
+                const panel = document.getElementById('response-panel');
+                panel.classList.add('active');
+
+                const dot = document.getElementById('res-dot');
+                dot.className = `status-dot ${res.ok ? 'success' : 'error'}`;
+
+                document.getElementById('res-status').textContent = `${res.status} ${res.statusText}`;
+                document.getElementById('res-time').textContent = `${duration}ms`;
+                document.getElementById('res-body').innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+
+                // Add to log
+                addLog('GET', path, res.status, duration);
+
+            } catch (err) {
+                const duration = Date.now() - start;
+                const panel = document.getElementById('response-panel');
+                panel.classList.add('active');
+                document.getElementById('res-dot').className = 'status-dot error';
+                document.getElementById('res-status').textContent = 'ERROR';
+                document.getElementById('res-time').textContent = `${duration}ms`;
+                document.getElementById('res-body').textContent = err.message;
+
+                addLog('GET', path, 'ERR', duration);
+            }
+
+            btn.classList.remove('loading');
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg> Test Endpoint`;
+        }
+
+        function addLog(method, path, status, duration) {
+            const log = document.getElementById('log-body');
+            if (firstLog) {
+                log.innerHTML = '';
+                firstLog = false;
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const ts = new Date().toLocaleTimeString();
+            const statusClass = status < 300 ? 's200' : status < 500 ? 's429' : 's500';
+
+            entry.innerHTML = `
+                <span class="log-ts">${ts}</span>
+                <span class="log-method get">${method}</span>
+                <span class="log-path">${path}</span>
+                <span class="log-status ${statusClass}">${status}</span>
+                <span class="log-duration">${duration}ms</span>
+            `;
+
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 20) log.lastChild.remove();
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, (match) => {
+                let cls = 'number';
+                if (/^"/.test(match)) {
+                    cls = /:$/.test(match) ? 'key' : 'string';
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                }
+                return `<span class="${cls}">${match}</span>`;
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,25 @@
+services:
+  redis:
+    image: redis:alpine
+    container_name: sentinel-redis
+    restart: always
+    expose:
+      - "6379"
+
+  shield:
+    build: 
+      context: ./Shield-Proxy
+    container_name: sentinel-shield
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - "8888:8888"
+    environment:
+      - SHIELD_PORT=8888
+      - BACKEND_URL=http://host.docker.internal:4000
+      - USE_REDIS=true
+      - REDIS_URL=redis://redis:6379
+      - ADMIN_KEY=taki
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

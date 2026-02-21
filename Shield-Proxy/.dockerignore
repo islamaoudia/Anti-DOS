@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+.env
+.git
+*.zip
+staging_sentinel/
+verify_output.txt
+verify_release.ps1
