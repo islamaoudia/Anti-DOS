@@ -2,7 +2,7 @@ const { getRedisClient } = require("../lib/redisClient");
 const crypto = require('crypto');
 
 /**
- * SENTINEL TOKEN BUCKET v3.0
+ * COMPLEX SHIELD TOKEN BUCKET v3.0
  * Features: Atomic Lua/Redis execution, Memory Fallback, Advanced Differentiation, and Multi-tier Isolation.
  */
 

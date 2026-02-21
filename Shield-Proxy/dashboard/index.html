@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL // ADVANCED DEFENSE v2.5</title>
+    <title>COMPLEX SHIELD // ADVANCED DEFENSE v2.5</title>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link
@@ -490,7 +490,7 @@
     <div id="auth-overlay">
         <div class="auth-card">
             <h1 style="color: var(--primary); letter-spacing: 5px; margin-bottom: 5px;">SYSTEM ENCRYPTED</h1>
-            <p style="font-size: 10px; color: var(--text-dim);">ENTER SENTINEL ACCESS KEY TO DECRYPT INTERFACE</p>
+            <p style="font-size: 10px; color: var(--text-dim);">ENTER COMPLEX SHIELD ACCESS KEY TO DECRYPT INTERFACE</p>
             <input type="password" id="auth-key" class="auth-input" placeholder="••••••••"
                 onkeypress="if(event.key==='Enter') verifyKey()">
             <br>
@@ -501,7 +501,7 @@
     <div class="container">
         <header>
             <div class="logo-group">
-                <h1 class="pulse-text">C0mpl3x_7he0r3m // <span>SHIELD</span></h1>
+                <h1 class="pulse-text">Complex Shield // <span>SHIELD</span></h1>
                 <img src="img/logo.png" alt="logo">
                 <p>Advanced DoS Mitigation Intelligence • v2.5 Enterprise</p>
             </div>
@@ -601,7 +601,8 @@
                     <span>AUTO-SCROLL ON</span>
                 </div>
                 <div id="feed" class="feed-container">
-                    <div class="feed-entry system pulse-text">Establishing secure handshake with Sentinel Engine...
+                    <div class="feed-entry system pulse-text">Establishing secure handshake with Complex Shield
+                        Engine...
                     </div>
                 </div>
             </section>
@@ -627,18 +628,18 @@
         <footer>
             <span>PROTOCOL: X-SEC-LUA-TOKEN-BUCKET v1.2</span>
             <span>DATA ENCRYPTION: AES-256 GCM</span>
-            <span>© 2026 SENTINEL DEFENSE INDUSTRIES</span>
+            <span>© 2026 COMPLEX SHIELD INDUSTRIES</span>
         </footer>
     </div>
 
     <script>
-        let ADMIN_KEY = sessionStorage.getItem('sentinel_key') || '';
+        let ADMIN_KEY = sessionStorage.getItem('complex_shield_key') || '';
         const socket = io(); // Connect to relative host
 
         function verifyKey() {
             const key = document.getElementById('auth-key').value;
             ADMIN_KEY = key;
-            sessionStorage.setItem('sentinel_key', key);
+            sessionStorage.setItem('complex_shield_key', key);
             checkAuth();
         }
 
@@ -652,7 +653,7 @@
                     loadConfig();
                 } else {
                     alert("ACCESS DENIED: INVALID KEY");
-                    sessionStorage.removeItem('sentinel_key');
+                    sessionStorage.removeItem('complex_shield_key');
                 }
             } catch (err) {
                 console.error("Auth check failed:", err);

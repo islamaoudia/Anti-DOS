@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:alpine
-    container_name: sentinel-redis
+    container_name: complex-shield-redis
     restart: always
     expose:
       - "6379"
@@ -9,7 +9,7 @@ services:
   shield:
     build: 
       context: ./Shield-Proxy
-    container_name: sentinel-shield
+    container_name: complex-shield
     restart: always
     depends_on:
       - redis

@@ -1,6 +1,6 @@
-# 🏁 Sentinel Shield Enterprise Build Script
+# 🏁 Complex Shield Enterprise Build Script
 
-This script generates a clean, production-ready release of the Sentinel Shield.
+This script generates a clean, production-ready release of the Complex Shield.
 It excludes development junk like 'node_modules', 'attacker/' scripts, and local logs.
 
 ## 🚀 How to Create a Release

@@ -1,4 +1,4 @@
-# Sentinel Shield Proxy Dockerfile
+# Complex Shield Proxy Dockerfile
 FROM node:20-alpine
 
 # Set working directory

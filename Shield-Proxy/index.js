@@ -39,7 +39,7 @@ app.get('/health', (req, res) => {
     res.json({
         status: 'online',
         timestamp: new Date().toISOString(),
-        engine: 'Sentinel Shield v2.5',
+        engine: 'Complex Shield v2.5',
         environment: process.env.NODE_ENV || 'production',
         redis: client?.isOpen ? 'connected' : 'disconnected',
         uptime: process.uptime()
@@ -83,7 +83,7 @@ io.on('connection', (socket) => {
     });
 });
 
-console.log(`🛡️ Sentinel Shield starting...`);
+console.log(`🛡️ Complex Shield starting...`);
 console.log(`Forwarding requests from :${SHIELD_PORT} ➔ ${BACKEND_URL}`);
 
 // App-level middleware
@@ -131,6 +131,6 @@ app.use('/', createProxyMiddleware({
 }));
 
 server.listen(SHIELD_PORT, '0.0.0.0', () => {
-    console.log(`✅ Sentinel Shield is active at http://0.0.0.0:${SHIELD_PORT} (Internal)`);
+    console.log(`✅ Complex Shield is active at http://0.0.0.0:${SHIELD_PORT} (Internal)`);
     console.log(`🛡️  External access via host port mapping configured in docker-compose.`);
 });

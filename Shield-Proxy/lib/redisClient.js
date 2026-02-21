@@ -12,21 +12,21 @@ const initRedis = async () => {
             socket: {
                 reconnectStrategy: (retries) => {
                     if (retries > 10) {
-                        console.error('[Sentinel-Redis] FATAL: Too many reconnect attempts. Shield will continue in memory-only mode.');
+                        console.error('[Complex Shield-Redis] FATAL: Too many reconnect attempts. Shield will continue in memory-only mode.');
                         return new Error('Redis reconnect failed');
                     }
                     const delay = Math.min(retries * 100, 3000);
-                    console.log(`[Sentinel-Redis] Connection lost. Reconnecting in ${delay}ms... (Attempt ${retries})`);
+                    console.log(`[Complex Shield-Redis] Connection lost. Reconnecting in ${delay}ms... (Attempt ${retries})`);
                     return delay;
                 }
             }
         });
 
-        redisClient.on('error', (err) => console.error('[Sentinel-Redis] Client Error:', err.message));
-        redisClient.on('ready', () => console.log('[Sentinel-Redis] Shield connection synchronized and ready.'));
+        redisClient.on('error', (err) => console.error('[Complex Shield-Redis] Client Error:', err.message));
+        redisClient.on('ready', () => console.log('[Complex Shield-Redis] Shield connection synchronized and ready.'));
 
         await redisClient.connect().catch(err => {
-            console.error('[Sentinel-Redis] Initial connection failed:', err.message);
+            console.error('[Complex Shield-Redis] Initial connection failed:', err.message);
         });
     }
     return redisClient;

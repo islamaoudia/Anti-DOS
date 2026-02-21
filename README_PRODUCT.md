@@ -13,10 +13,10 @@ chmod +x setup.sh
 
 The installer will ask you 3 questions:
 1. **What port is your server running on?** — e.g. `3000`, `4000`, `8080`
-2. **What port should Sentinel Shield listen on?** — e.g. `80`, `8081` (clients connect here)
+2. **What port should Complex Shield listen on?** — e.g. `80`, `8081` (clients connect here)
 3. **Choose a dashboard secret key** — used to access the live monitoring HUD
 
-That's it. Sentinel Shield will build, deploy, and start protecting your server automatically.
+That's it. Complex Shield will build, deploy, and start protecting your server automatically.
 
 ---
 
@@ -27,7 +27,7 @@ Internet Traffic
        │
        ▼
 ┌──────────────────┐
-│  Sentinel Shield │  ← Filters DoS attacks
+│  Complex Shield │  ← Filters DoS attacks
 │   (port 80)      │
 └────────┬─────────┘
          │ Clean traffic only

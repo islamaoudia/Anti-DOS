@@ -1,4 +1,4 @@
-# Sentinel Shield — Technical Report
+# Complex Shield — Technical Report
 
 **Project:** Anti-DoS Protection System  
 **Date:** February 13, 2026  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-Sentinel Shield is an enterprise-grade Denial-of-Service (DoS) mitigation system designed as a transparent reverse proxy layer that sits between client traffic and a backend application. The system provides real-time threat detection, intelligent rate limiting using a Token Bucket algorithm, multi-tier IP isolation, and a full-featured monitoring dashboard — all deployable via a single command using Docker.
+Complex Shield is an enterprise-grade Denial-of-Service (DoS) mitigation system designed as a transparent reverse proxy layer that sits between client traffic and a backend application. The system provides real-time threat detection, intelligent rate limiting using a Token Bucket algorithm, multi-tier IP isolation, and a full-featured monitoring dashboard — all deployable via a single command using Docker.
 
 The solution is composed of three principal components:
 
@@ -413,5 +413,5 @@ sudo ./setup.sh
 
 ## 12. Conclusion
 
-Sentinel Shield provides a complete, production-ready DoS protection solution that can be deployed in front of any HTTP backend in under 60 seconds. The combination of atomic rate limiting via Redis Lua scripts, multi-tier progressive penalties, real-time monitoring, and fully containerized deployment makes it suitable for protecting web applications from volumetric and application-layer denial-of-service attacks.
+Complex Shield provides a complete, production-ready DoS protection solution that can be deployed in front of any HTTP backend in under 60 seconds. The combination of atomic rate limiting via Redis Lua scripts, multi-tier progressive penalties, real-time monitoring, and fully containerized deployment makes it suitable for protecting web applications from volumetric and application-layer denial-of-service attacks.
 

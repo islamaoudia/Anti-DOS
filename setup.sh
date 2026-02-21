@@ -49,7 +49,7 @@ echo "  └───────────────────────
 echo ""
 
 read -rp "  1. What port is your server running on? (e.g. 3000): " TARGET_PORT
-read -rp "  2. What port should Sentinel Shield listen on? (e.g. 80): " SHIELD_PORT
+read -rp "  2. What port should Complex Shield listen on? (e.g. 80): " SHIELD_PORT
 echo -n "  3. Choose a dashboard secret key: "
 read -rs ADMIN_KEY
 echo -e "\n"
@@ -64,7 +64,7 @@ fi
 echo "  🔍 Checking if port $SHIELD_PORT is available on host..."
 if netstat -tuln | grep -q ":$SHIELD_PORT "; then
     echo "  ❌ ERROR: Port $SHIELD_PORT is ALREADY IN USE by another process!"
-    echo "     Sentinel Shield cannot start unless this port is free."
+    echo "     Complex Shield cannot start unless this port is free."
     exit 1
 fi
 echo "  ✅ Port $SHIELD_PORT is free."
